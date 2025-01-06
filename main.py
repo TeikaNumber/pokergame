@@ -2,6 +2,7 @@ import os
 import random
 
 #Classes
+#region
 
 class Card:
     def __init__(self, rank, suit, modifier, ind):
@@ -89,47 +90,75 @@ class Deck:
         
 class Hand(Deck):
 
-    def __init__(self, cards):
+    def __init__(self, cards, sorting):
         super().__init__(cards)
+        self.sorting = sorting
+        self.sort(self.sorting)
 
-    def play(self):
+    def sort(self, mode):
+        super().sort(mode)
+        self.sorting = mode
+
+    def play(self, max, score):
         valid = [False]
+
+        #get choice
         while not all(valid):
             valid = []
             output = []
-            cards = input("Which cards would you like to play?")
-            cards = cards.split(", ")
-            for card in cards:
-                if card.isnumeric():
-                    if int(card) -1 in range(self.length):
-                        valid.append(True)
-                        output.append(int(card)-1)
-                    else:
-                        print("That is an invalid input")
-                        valid.append(False)
+            print_hand(self, score)
+            play = input("\nWhich cards would you like to play? Seperate them with a space. Enter 's' to change the sorting: ")
+            os.system('clear')
+
+            #change sorting
+            if play == "s":
+                valid.append(False)
+                if self.sorting == "r":
+                    self.sorting = "s"
                 else:
-                    print("That is an invalid input")
+                    self.sorting = "r"
+                self.sort(self.sorting)
+            
+            #check if play is valid
+            else:
+                play = play.split(" ")
+                if len(play) > max:
                     valid.append(False)
+                else:
+                    for card in play:
+                        if card.isnumeric():
+                            if int(card) -1 in range(self.length):
+                                valid.append(True)
+                                output.append(int(card)-1)
+                            else:
+                                print("That is an invalid input")
+                                valid.append(False)
+                        else:
+                            print("That is an invalid input")
+                            valid.append(False)
+        
+        return output
 
-        return cards
-                
+#endregion
+   
 #Functions
-
-def print_hand(deck):
+#region
+def print_hand(printed, score):
     art = []
-    for i in range(hand.length): #for every card in hand
-        art.append(hand.cards[i].card_to_ascii()) #add an image of that card
+    for i in range(printed.length): #for every card in hand
+        art.append(printed.cards[i].card_to_ascii()) #add an image of that card
 
     for i in range(6):
         line = ""
-        for j in range(hand.length):
+        for j in range(printed.length):
             line += art[j][i]
-            if j + 1 != hand.length:
+            if j + 1 != printed.length:
                 line += "   "
         print(line)
     
-    for i in range(hand.length):
+    for i in range(printed.length):
         print(f"  {i+1}  {i+1}  ", end="   ")
+    print(f"\nScore: {score}")
 
 def create_random_card(ind):
     suit = random.choice(["h","c","d","s"])
@@ -146,9 +175,32 @@ def draw(deck, hand, amount, max):
         hand.cards.append(card)
     return hand.cards, deck.cards
 
-#Variables
+def is_flush(hand):
+    for i in range(hand.length - 1):
+        if hand.cards[i].suit != hand.cards[hand.length].suit:
+            return False
+    return True
 
-#Create Starting Deck v
+def score_hand(hand, score, levels: dict):
+    chips = 0
+    ishand = True
+    play = ""
+    # if hand.length == 5:
+    #     hand.sort("r")
+    #     for i in range(4):
+    #         if hand.cards[i+1].rank != hand.cards[0].rank:
+    #             ishand = False
+    #     if ishand:
+    #         if is_flush(hand):
+    #             chips = (hand.cards[0].rank * 5) + (((levels[flush_five] - 1) * 0.02) + 1) * levels
+
+
+#endregion
+
+#Variables
+#region
+
+#Create Starting Deck
 #region
 list = []
 list.append(Card(1, 'h', 'none', 1))
@@ -204,36 +256,64 @@ list.append(Card(11, 'c', 'none', 50))
 list.append(Card(12, 'c', 'none', 51))
 list.append(Card(13, 'c', 'none', 52))
 deck = Deck(list)
+deck.sort("s")
 #endregion
 
-hand = Hand([])
+hand = Hand([], "r")
 ID = 52
 
 played = Deck([])
 
+discard = Deck([])
+
+p_hands = {"flush_five":[40,7], "flush_house":[35,6], "five":[30,6], "royal_flush":[30,5], "flush_straight":[20,5], "four":[20,4], "house":[15,4], "flush_":[10,4], "straight":[5,4], "three":[30,3], "two_pair":[20,2], "pair":[0,2], "high":[0,1]}
+
+cards = 52
 hand_size = 7
-
+play_size = 5
 draw_size = 7
-
-#Game loop
-print("HELLO THERE\nWelcome to POKER GAME tm\nTutorial in README")
-input("\n\nPress ENTER to begin game")
+score = 0
+target = 0
 playing = True
 inGame = True
 inShop = False
-deck.sort("s")
+#endregion
+
+#Game loop
+#region
+
+os.system('clear')
+print("HELLO THERE\nWelcome to POKER GAME tm\nTutorial in README")
+input("\n\nPress ENTER to begin game")
 
 while playing:
     
     if inGame:
         deck.shuffle()
+        score = 0
+        os.system('clear')
     while inGame:
+
         hand.cards, deck.cards = draw(deck, hand, draw_size, hand_size)
-        hand.sort("s")
-        print_hand(hand)
-        playedID = hand.play()
+        hand.sort(hand.sorting)
+
+        playedID = hand.play(play_size, score)
+        step = 0
         for i in playedID:
-            played.cards.append(hand.cards.pop(i))
-        print_hand(played)
+            played.cards.append(hand.cards[i])
+        for i in playedID:
+            hand.cards.pop(i-step)
+            step += 1
+        step = 0
+
+        score_hand(played, score, p_hands)
+        print("PLAYED:")
+        print_hand(played, score)
+
+        draw_size = played.length
+        draw(played, discard, draw_size, cards)
+        if score >= target:
         inGame = False
-        playing = False
+
+
+#endregion
