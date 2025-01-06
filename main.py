@@ -9,31 +9,44 @@ class Card:
         self.suit = suit
         self.modifier = modifier
 
-    def suit_to_ascii(image, suit):
-        if suit == "d":
+    def suit_to_ascii(self, image):
+        if self.suit == "d":
             image.append(r"|  /\  |")
             image.append(r"|  \/  |")
-        elif suit == "s":
+        elif self.suit == "s":
             image.append(r"|  /\  |")
             image.append("|  VV  |")
-        elif suit == "h":
+        elif self.suit == "h":
             image.append("|  AA  |")
             image.append(r"|  \/  |")
-        elif suit == "c":
+        elif self.suit == "c":
             image.append("|  oo  |")
             image.append("|  qp  |")
         return image
     
-    def card_to_ascii(rank, suit, modifier):
+    def card_to_ascii(self):
         image = ["--------"]
-        if rank < 11 and rank > 1 and modifier == "none":
-            image.append(f"|{rank}     |")
-            image = suit_to_ascii(image, suit)
-            image.append(f"|     {rank}|")
-        elif rank == 1:
-            image.append("|A     |")
-            image = suit_to_ascii(image, suit)
-            image.append("|     A|")
+        if self.modifier != "wild":
+            if self.rank < 11 and self.rank > 1:
+                image.append(f"|{self.rank}     |")
+                image = self.suit_to_ascii(image)
+                image.append(f"|     {self.rank}|")
+            elif self.rank == 1:
+                image.append("|A     |")
+                image = self.suit_to_ascii(image)
+                image.append("|     A|")
+            elif self.rank == 11:
+                image.append("|J     |")
+                image = self.suit_to_ascii(image)
+                image.append("|     J|")
+            elif self.rank == 12:
+                image.append("|Q     |")
+                image = self.suit_to_ascii(image)
+                image.append("|     Q|")
+            elif self.rank == 13:
+                image.append("|K     |")
+                image = self.suit_to_ascii(image)
+                image.append("|     K|")
         image.append("--------")
         return image
     
@@ -45,8 +58,12 @@ class Card:
 
 class Deck:
     def __init__(self, cards: list):
-        self.length = len(cards)
+        
         self.containedCards = cards
+
+    @property
+    def length(self):
+        return len(self.containedCards)
 
     def __str__(self):
         strng = ""
@@ -55,16 +72,24 @@ class Deck:
         return strng
 
 #Functions
+
 def print_hand(hand):
     art = []
-    for i in range(len(hand)): #for every card in hand
-        art.append(hand[i].card_to_ascii) #add an image of that card
+    for i in range(hand.length): #for every card in hand
+        art.append(hand.containedCards[i].card_to_ascii()) #add an image of that card
+
     for i in range(6):
-        line = '   '.join([])
+        line = ""
+        for j in range(hand.length):
+            line += art[j][i]
+            if j + 1 != hand.length:
+                line += "   "
+        print(line)
 
 #Variables
 
-'''Create Starting Deck'''
+#Create Starting Deck v
+#region
 list = []
 list.append(Card(1, 'h', 'none'))
 list.append(Card(2, 'h', 'none'))
@@ -119,6 +144,7 @@ list.append(Card(11, 'c', 'none'))
 list.append(Card(12, 'c', 'none'))
 list.append(Card(13, 'c', 'none'))
 deck = Deck(list)
+#endregion
 
-hand = Deck([])
+hand = Deck([Card(12,'d','none'), Card(11,"c","none")])
 print_hand(hand)
