@@ -37,7 +37,7 @@ class Card:
                 image.append(f"|{self.rank}    |")
                 image = self.suit_to_ascii(image)
                 image.append(f"|    {self.rank}|")                
-            elif self.rank == 1:
+            elif self.rank == 14:
                 image.append("|A     |")
                 image = self.suit_to_ascii(image)
                 image.append("|     A|")
@@ -56,6 +56,28 @@ class Card:
         image.append("--------")
         return image
     
+    def score(self, chips, mult):
+        if self.rank < 11:
+            chips += self.rank
+        elif self.rank != 14:
+            chips += 10
+        else:
+            chips += 11
+        if self.modifier == "mult2":
+            mult += 2
+        elif self.modifier == "mult4":
+            mult += 4
+        elif self.modifier == "holo":
+            mult *= 2
+        elif self.modifier == "plus2":
+            chips += 2
+        elif self.modifier == "plus4":
+            chips += 4
+        elif self.modifier == "foil":
+            chips *= 2
+
+        return chips, mult
+
     def __str__(self):
         if self.modifier == "none":
             return f"{self.suit}{self.rank}"
@@ -107,7 +129,7 @@ class Hand(Deck):
             valid = []
             output = []
             print_hand(self, score)
-            play = input("\nWhich cards would you like to play? Seperate them with a space. Enter 's' to change the sorting: ")
+            play = input("\nWhich cards would you like to select? Seperate them with a space. Enter 's' to change the sorting: ")
             os.system('clear')
 
             #change sorting
@@ -175,25 +197,126 @@ def draw(deck, hand, amount, max):
         hand.cards.append(card)
     return hand.cards, deck.cards
 
-def is_flush(hand):
+def is_flush(hand, cards):
     for i in range(hand.length - 1):
         if hand.cards[i].suit != hand.cards[hand.length].suit:
-            return False
-    return True
+            return False, cards
+    return True, hand.cards
+
+def is_five(hand, cards):
+    if hand.length != 5:
+        return False, cards
+    for i in range(4):
+        if hand.cards[i].rank != hand.cards[4].rank:
+            return False, cards
+    return True, hand.cards
+
+def is_four(hand, cards):
+    count = []
+    target = 4
+    counted_cards = []
+    if hand.length < target:
+        return False, cards
+    for i in range(hand.length):
+        count.append(0)
+        counted_cards.append([])
+        for j in range(hand.length):
+            if hand.cards[i].rank == hand.cards[j].rank:
+                count[i] += 1
+                counted_cards[i].append(j)
+    if target in count:
+        solution = count.index(target)
+        return True, counted_cards[solution]
+    return False, cards
+                
+def is_three(hand, cards):
+    count = []
+    target = 3
+    counted_cards = []
+    if hand.length < target:
+        return False, cards
+    for i in range(hand.length):
+        count.append(0)
+        counted_cards.append([])
+        for j in range(hand.length):
+            if hand.cards[i].rank == hand.cards[j].rank:
+                count[i] += 1
+                counted_cards[i].append(j)
+    if target in count:
+        solution = count.index(target)
+        return True, counted_cards[solution]
+    return False, cards
+
+def is_pair(hand, cards):
+    count = []
+    target = 2
+    counted_cards = []
+    if hand.length < target:
+        return False, cards
+    for i in range(hand.length):
+        count.append(0)
+        counted_cards.append([])
+        for j in range(hand.length):
+            if hand.cards[i].rank == hand.cards[j].rank:
+                count[i] += 1
+                counted_cards[i].append(j)
+    if target in count:
+        solution = count.index(target)
+        return True, counted_cards[solution]
+    return False, cards
+
+
 
 def score_hand(hand, score, levels: dict):
-    chips = 0
-    ishand = True
-    play = ""
-    # if hand.length == 5:
-    #     hand.sort("r")
-    #     for i in range(4):
-    #         if hand.cards[i+1].rank != hand.cards[0].rank:
-    #             ishand = False
-    #     if ishand:
-    #         if is_flush(hand):
-    #             chips = (hand.cards[0].rank * 5) + (((levels[flush_five] - 1) * 0.02) + 1) * levels
 
+    #Variables
+    #region
+    chips = 0
+    multiplier = 0
+    cards = []
+    #endregion
+
+    #Find hand
+    #region
+    ishand, cards = is_five(hand, cards)
+    if ishand:
+        ishand, cards = is_flush(hand,cards)
+        if ishand:
+            play = "flush_five"
+        else:
+            play = "five"
+    ishand, cards = is_four(hand,cards)
+    if ishand:
+        play = "four"
+    ishand, cards = is_three(hand,cards)
+    if ishand:
+        play = "three"
+        ishand, cards = is_pair(hand,cards)
+        if ishand:
+            play = "house"
+    ishand, cards = is_pair(hand,cards)
+    if ishand:
+        play = "pair"
+        ishand, cards = is_three(hand,cards)
+        if ishand:
+            play = "house"
+    if cards == []:
+        play = "high"
+        hand.sort("r")
+        cards.append(-1)
+    #endregion
+
+    #Calculate score
+    #region
+    x = levels[play]
+    chips += x[0]
+    multiplier += x[1]
+    for i in cards:
+        chips, multiplier = hand.cards[i].score(chips, multiplier)
+    score += (chips * multiplier)
+    #endregion
+    
+    return score
 
 #endregion
 
@@ -203,7 +326,7 @@ def score_hand(hand, score, levels: dict):
 #Create Starting Deck
 #region
 list = []
-list.append(Card(1, 'h', 'none', 1))
+list.append(Card(14, 'h', 'none', 1))
 list.append(Card(2, 'h', 'none', 2))
 list.append(Card(3, 'h', 'none', 3))
 list.append(Card(4, 'h', 'none', 4))
@@ -216,7 +339,7 @@ list.append(Card(10, 'h', 'none', 10))
 list.append(Card(11, 'h', 'none', 11))
 list.append(Card(12, 'h', 'none', 12))
 list.append(Card(13, 'h', 'none', 13))
-list.append(Card(1, 'd', 'none', 14))
+list.append(Card(14, 'd', 'none', 14))
 list.append(Card(2, 'd', 'none', 15))
 list.append(Card(3, 'd', 'none', 16))
 list.append(Card(4, 'd', 'none', 17))
@@ -229,7 +352,7 @@ list.append(Card(10, 'd', 'none', 23))
 list.append(Card(11, 'd', 'none', 24))
 list.append(Card(12, 'd', 'none', 25))
 list.append(Card(13, 'd', 'none', 26))
-list.append(Card(1, 's', 'none', 27))
+list.append(Card(14, 's', 'none', 27))
 list.append(Card(2, 's', 'none', 28))
 list.append(Card(3, 's', 'none', 29))
 list.append(Card(4, 's', 'none', 30))
@@ -242,7 +365,7 @@ list.append(Card(10, 's', 'none', 36))
 list.append(Card(11, 's', 'none', 37))
 list.append(Card(12, 's', 'none', 38))
 list.append(Card(13, 's', 'none', 39))
-list.append(Card(1, 'c', 'none', 40))
+list.append(Card(14, 'c', 'none', 40))
 list.append(Card(2, 'c', 'none', 41))
 list.append(Card(3, 'c', 'none', 42))
 list.append(Card(4, 'c', 'none', 43))
@@ -268,12 +391,14 @@ discard = Deck([])
 
 p_hands = {"flush_five":[40,7], "flush_house":[35,6], "five":[30,6], "royal_flush":[30,5], "flush_straight":[20,5], "four":[20,4], "house":[15,4], "flush_":[10,4], "straight":[5,4], "three":[30,3], "two_pair":[20,2], "pair":[0,2], "high":[0,1]}
 
-cards = 52
+total_cards = 52
 hand_size = 7
 play_size = 5
 draw_size = 7
 score = 0
 target = 0
+base_discards = 3
+base_hands = 4
 playing = True
 inGame = True
 inShop = False
@@ -292,28 +417,46 @@ while playing:
         deck.shuffle()
         score = 0
         os.system('clear')
+        discards = base_discards
+        hands = base_hands
     while inGame:
 
         hand.cards, deck.cards = draw(deck, hand, draw_size, hand_size)
         hand.sort(hand.sorting)
+        play = "n"
+        while play != "p":
+            playedID = hand.play(play_size, score)
+            step = 0
+            for i in playedID:
+                played.cards.append(hand.cards[i])
+            print_hand(played, "")
+            play = input("Would like to play, discard, or niether? (p, d, n): ")
+            os.system('clear')
+            if play == "p":
+                for i in playedID:
+                    hand.cards.pop(i-step)
+                    step += 1
+            elif play == "d":
+                if discards != 0:
+                    for i in playedID:
+                        hand.cards.pop(i-step)
+                        step += 1
+                    discard.cards, played.cards = draw(played, discard, played.length, total_cards)
+                    discards -= 1
+                else:
+                    play = "n"
+            if play == "n":
+                hand.cards, played.cards = draw(play, hand, played.length, hand_size)
+            step = 0
 
-        playedID = hand.play(play_size, score)
-        step = 0
-        for i in playedID:
-            played.cards.append(hand.cards[i])
-        for i in playedID:
-            hand.cards.pop(i-step)
-            step += 1
-        step = 0
-
-        score_hand(played, score, p_hands)
+        score = score_hand(played, score, p_hands)
         print("PLAYED:")
         print_hand(played, score)
 
         draw_size = played.length
-        draw(played, discard, draw_size, cards)
+        discard.cards, played.cards = draw(played, discard, draw_size, total_cards)
         if score >= target:
-        inGame = False
+            inGame = False
 
 
 #endregion
