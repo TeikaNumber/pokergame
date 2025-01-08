@@ -130,7 +130,7 @@ class Hand(Deck):
             output = []
             print_hand(self, score)
             play = input("\nWhich cards would you like to select? Seperate them with a space. Enter 's' to change the sorting: ")
-            os.system('clear')
+            os.system('cls')
 
             #change sorting
             if play == "s":
@@ -189,7 +189,7 @@ def create_random_card(ind):
     ind += 1
     return rank, suit, modifier, ind
 
-def draw(deck, hand, amount, max):
+def draw(deck: Deck, hand: Deck, amount, max):
     if hand.length + amount > max:
         amount = max - hand.length
     for i in range(amount):
@@ -198,8 +198,10 @@ def draw(deck, hand, amount, max):
     return hand.cards, deck.cards
 
 def is_flush(hand, cards):
-    for i in range(hand.length - 1):
-        if hand.cards[i].suit != hand.cards[hand.length].suit:
+    if hand.length != 5:
+        return False, cards
+    for i in range(4):
+        if hand.cards[i].suit != hand.cards[4].suit:
             return False, cards
     return True, hand.cards
 
@@ -265,7 +267,33 @@ def is_pair(hand, cards):
         return True, counted_cards[solution]
     return False, cards
 
+def is_straight(hand, cards):
+    straight = Deck([])
+    if hand.length != 5:
+        return False, cards
+    for i in range(5):
+        straight.cards.append(hand.cards[i])
+    straight.sort('r')
+    for i in range(1,5):
+        if straight.cards[i].rank - straight.cards[i-1].rank != 1:
+            return False, cards
+    return True, [0,1,2,3,4]
 
+def is_two_pair(hand, cards):
+    output = []
+    hand.sort("r")
+    ishand, output = is_pair(hand, output)
+    if ishand:
+        for i in range(2):
+            hand.cards.pop(output[i])
+        ishand, card = is_pair(hand, output)
+        for i in range(len(card)):
+            output.append(card.pop(0))
+        if ishand:
+            output[2] += 2
+            output[3] += 2
+            return True, output
+    return False, cards
 
 def score_hand(hand, score, levels: dict):
 
@@ -294,12 +322,38 @@ def score_hand(hand, score, levels: dict):
         ishand, cards = is_pair(hand,cards)
         if ishand:
             play = "house"
+            ishand, cards = is_flush(hand, cards)
+            if ishand:
+                play = "flush_house"
     ishand, cards = is_pair(hand,cards)
     if ishand:
         play = "pair"
         ishand, cards = is_three(hand,cards)
         if ishand:
             play = "house"
+            ishand, cards = is_flush(hand, cards)
+            if ishand:
+                play = "flush_house"
+    ishand, cards = is_straight(hand, cards)
+    if ishand:
+        play = "straight"
+        ishand, cards = is_flush(hand, cards)
+        if ishand:
+            count = 0
+            play = "flush_straight"
+            for i in range(5):
+                if hand.cards[i].rank == 10 or hand.cards[i].rank == 14:
+                    count += 1
+            if count == 2:
+                play = 'royal_flush'
+            count = 0
+    ishand, cards = is_two_pair(hand, cards)
+    if ishand:
+        play = "two_pair"
+    ishand, cards = is_flush(hand, cards)
+    if ishand:
+        if play not in "flush_five flush_house flush_straight royal_flush":
+            play = "flush"
     if cards == []:
         play = "high"
         hand.sort("r")
@@ -389,7 +443,7 @@ played = Deck([])
 
 discard = Deck([])
 
-p_hands = {"flush_five":[40,7], "flush_house":[35,6], "five":[30,6], "royal_flush":[30,5], "flush_straight":[20,5], "four":[20,4], "house":[15,4], "flush_":[10,4], "straight":[5,4], "three":[30,3], "two_pair":[20,2], "pair":[0,2], "high":[0,1]}
+p_hands = {"flush_five":[40,7], "flush_house":[35,6], "five":[30,6], "royal_flush":[30,5], "flush_straight":[20,5], "four":[20,4], "house":[15,4], "flush":[10,4], "straight":[5,4], "three":[30,3], "two_pair":[20,2], "pair":[0,2], "high":[0,1]}
 
 total_cards = 52
 hand_size = 7
@@ -407,7 +461,7 @@ inShop = False
 #Game loop
 #region
 
-os.system('clear')
+os.system('cls')
 print("HELLO THERE\nWelcome to POKER GAME tm\nTutorial in README")
 input("\n\nPress ENTER to begin game")
 
@@ -416,7 +470,7 @@ while playing:
     if inGame:
         deck.shuffle()
         score = 0
-        os.system('clear')
+        os.system('cls')
         discards = base_discards
         hands = base_hands
     while inGame:
@@ -430,23 +484,30 @@ while playing:
             for i in playedID:
                 played.cards.append(hand.cards[i])
             print_hand(played, "")
-            play = input("Would like to play, discard, or niether? (p, d, n): ")
-            os.system('clear')
+            play = input(f"Would like to play, discard, or niether? (p ({hands} remaining), d ({discards} remaining), n): ")
+            os.system('cls')
             if play == "p":
-                for i in playedID:
-                    hand.cards.pop(i-step)
-                    step += 1
+                if hands != 0:
+                    for i in playedID:
+                        hand.cards.pop(i-step)
+                        step += 1
+                        hands -= 1
+                else:
+                    play = "n"
+                
             elif play == "d":
                 if discards != 0:
                     for i in playedID:
                         hand.cards.pop(i-step)
                         step += 1
-                    discard.cards, played.cards = draw(played, discard, played.length, total_cards)
+                    draw_size = played.length
+                    discard.cards, played.cards = draw(played, discard, draw_size, total_cards)
+                    hand.cards, deck.cards = draw(deck, hand, draw_size, total_cards)
                     discards -= 1
                 else:
                     play = "n"
             if play == "n":
-                hand.cards, played.cards = draw(play, hand, played.length, hand_size)
+                hand.cards, played.cards = draw(played, hand, played.length, hand_size)
             step = 0
 
         score = score_hand(played, score, p_hands)
