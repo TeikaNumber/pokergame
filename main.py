@@ -281,12 +281,19 @@ def is_straight(hand, cards):
 
 def is_two_pair(hand, cards):
     output = []
+    hold = []
     hand.sort("r")
     ishand, output = is_pair(hand, output)
     if ishand:
+        step = 0
         for i in range(2):
-            hand.cards.pop(output[i])
+            x = hand.cards.pop(output[i-step])
+            hold.append(x)
+            step += 1
+        step = 0
         ishand, card = is_pair(hand, output)
+        for i in hold:
+            hand.cards.insert(0,i)
         for i in range(len(card)):
             output.append(card.pop(0))
         if ishand:
@@ -479,6 +486,7 @@ while playing:
         hand.sort(hand.sorting)
         play = "n"
         while play != "p":
+            hand.sort(hand.sorting)
             playedID = hand.play(play_size, score)
             step = 0
             for i in playedID:
