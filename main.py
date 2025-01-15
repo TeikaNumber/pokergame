@@ -109,7 +109,28 @@ class Deck:
 
     def shuffle(self):
         random.shuffle(self.cards)
-        
+
+class Shop(Deck):
+    def __init__(self, cards, price):
+        super().__init__(cards)
+        self.price = price
+        self.reroll = 3
+
+    def buy(self, money):
+        print(f"Each card currently costs ${self.price}")
+        play = input("Would you like to buy a card (b), reroll(r), or continue to the next round(c)? ")
+        if play == "b":
+            sale = input("Which card would you like to buy? (Please input numerically): ")
+            return True, int(sale) - 1, money
+        elif play == "r":
+            if money >= self.reroll:
+                money -= self.reroll
+                self.reroll += 1
+            return True, 99, money
+        else:
+            return False, 99, money
+
+
 class Hand(Deck):
 
     def __init__(self, cards, sorting):
@@ -180,14 +201,17 @@ def print_hand(printed, score):
     
     for i in range(printed.length):
         print(f"  {i+1}  {i+1}  ", end="   ")
-    print(f"\nScore: {score}")
+    if score != "":
+        print(f"\nScore: {score}")
+    else:
+        print("\n")
 
 def create_random_card(ind):
     suit = random.choice(["h","c","d","s"])
     rank = random.randint(0,13)
-    modifier = random.choice("none","none","none","none","none","none","none","none","none","wild")
+    modifier = random.choice(["none","none","none","none","none","none","none","none","none","wild"])
     ind += 1
-    return rank, suit, modifier, ind
+    return Card(rank, suit, modifier, ind)
 
 def draw(deck: Deck, hand: Deck, amount, max):
     if hand.length + amount > max:
@@ -203,7 +227,7 @@ def is_flush(hand, cards):
     for i in range(4):
         if hand.cards[i].suit != hand.cards[4].suit:
             return False, cards
-    return True, hand.cards
+    return True, [0,1,2,3,4]
 
 def is_five(hand, cards):
     if hand.length != 5:
@@ -309,6 +333,7 @@ def score_hand(hand, score, levels: dict):
     chips = 0
     multiplier = 0
     cards = []
+    play = "none"
     #endregion
 
     #Find hand
@@ -447,17 +472,20 @@ hand = Hand([], "r")
 ID = 52
 
 played = Deck([])
-
+shop = Shop([], 2)
 discard = Deck([])
 
 p_hands = {"flush_five":[40,7], "flush_house":[35,6], "five":[30,6], "royal_flush":[30,5], "flush_straight":[20,5], "four":[20,4], "house":[15,4], "flush":[10,4], "straight":[5,4], "three":[30,3], "two_pair":[20,2], "pair":[0,2], "high":[0,1]}
 
 total_cards = 52
+shop_price = 2
+cash = 0
+shop_size = 3
 hand_size = 7
 play_size = 5
 draw_size = 7
 score = 0
-target = 0
+target = 50
 base_discards = 3
 base_hands = 4
 playing = True
@@ -481,7 +509,7 @@ while playing:
         discards = base_discards
         hands = base_hands
     while inGame:
-
+        os.system('clear' if os == 'NT' else 'cls')
         hand.cards, deck.cards = draw(deck, hand, draw_size, hand_size)
         hand.sort(hand.sorting)
         play = "n"
@@ -515,17 +543,36 @@ while playing:
                 else:
                     play = "n"
             if play == "n":
-                hand.cards, played.cards = draw(played, hand, played.length, hand_size)
+                played.cards = []
             step = 0
 
         score = score_hand(played, score, p_hands)
         print("PLAYED:")
         print_hand(played, score)
-
+        input("Press ENTER to continue:")
         draw_size = played.length
         discard.cards, played.cards = draw(played, discard, draw_size, total_cards)
         if score >= target:
             inGame = False
+            deck.cards, hand.cards = draw(deck, hand, draw_size, total_cards)
+            deck.cards, discard.cards = draw(deck, discard, draw_size, total_cards)
+            inShop = True
+            input("\n\nCongrats, you beat this level! Press ENTER to continue: ")
+        if hands == 0 and inGame:
+            inGame = False
+            playing = False
+
+    while inShop:
+        for i in range(shop_size):
+            ID += 1
+            x = create_random_card(ID)
+            shop.cards.append(x)
+        print_hand(shop, "")
+        inShop, x, cash = shop.buy(cash)
+        if x != 99:
+            deck.cards.append(shop.cards[x-1])
+            
+print("Game Over")
 
 
 #endregion
