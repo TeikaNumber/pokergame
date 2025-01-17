@@ -1,88 +1,46 @@
-class Card:
-    def __init__(self, rank, suit, modifier):
-        self.rank = rank
-        self.suit = suit
-        self.modifier = modifier
+import tkinter as tk
 
-    def __str__(self):
-        if self.modifier == "none":
-            return f"{self.suit}{self.rank}"
-        else:
-            return f"{self.suit}{self.rank} {self.modifier}"
+class App(tk.Tk):
+    
+    def __init__(self, *args, **kwargs):
+        tk.Tk.__init__(self, *args, **kwargs)
 
-class Deck:
-    def __init__(self, cards: list):
-        self.length = len(cards)
-        self.containedCards = cards
+        container = tk.Frame(self)
+        container.pack(side="top", fill="both", expand=True)
+        container.grid_columnconfigure(0, weight=1)
+        container.grid_rowconfigure(0, weight=1)
 
-    def __str__(self):
-        strng = ""
-        for i in self.containedCards:
-            strng += str(i) + " "
-        return strng
+        self.frames = {}
+        self.frames["StartPage"] = StartPage(parent=container, controller=self)
 
-list = []
-list.append(Card(1, 'h', 'none'))
-list.append(Card(2, 'h', 'none'))
-list.append(Card(3, 'h', 'none'))
-list.append(Card(4, 'h', 'none'))
-list.append(Card(5, 'h', 'none'))
-list.append(Card(6, 'h', 'none'))
-list.append(Card(7, 'h', 'none'))
-list.append(Card(8, 'h', 'none'))
-list.append(Card(9, 'h', 'none'))
-list.append(Card(10, 'h', 'none'))
-list.append(Card(11, 'h', 'none'))
-list.append(Card(12, 'h', 'none'))
-list.append(Card(13, 'h', 'none'))
-list.append(Card(1, 's', 'none'))
-list.append(Card(2, 's', 'none'))
-list.append(Card(3, 's', 'none'))
-list.append(Card(4, 's', 'none'))
-list.append(Card(5, 's', 'none'))
-list.append(Card(6, 's', 'none'))
-list.append(Card(7, 's', 'none'))
-list.append(Card(8, 's', 'none'))
-list.append(Card(9, 's', 'none'))
-list.append(Card(10, 's', 'none'))
-list.append(Card(11, 's', 'none'))
-list.append(Card(12, 's', 'none'))
-list.append(Card(13, 's', 'none'))
-list.append(Card(1, 's', 'none'))
-list.append(Card(2, 's', 'none'))
-list.append(Card(3, 's', 'none'))
-list.append(Card(4, 's', 'none'))
-list.append(Card(5, 's', 'none'))
-list.append(Card(6, 's', 'none'))
-list.append(Card(7, 's', 'none'))
-list.append(Card(8, 's', 'none'))
-list.append(Card(9, 's', 'none'))
-list.append(Card(10, 's', 'none'))
-list.append(Card(11, 's', 'none'))
-list.append(Card(12, 's', 'none'))
-list.append(Card(13, 's', 'none'))
-list.append(Card(1, 'c', 'none'))
-list.append(Card(2, 'c', 'none'))
-list.append(Card(3, 'c', 'none'))
-list.append(Card(4, 'c', 'none'))
-list.append(Card(5, 'c', 'none'))
-list.append(Card(6, 'c', 'none'))
-list.append(Card(7, 'c', 'none'))
-list.append(Card(8, 'c', 'none'))
-list.append(Card(9, 'c', 'none'))
-list.append(Card(10, 'c', 'none'))
-list.append(Card(11, 'c', 'none'))
-list.append(Card(12, 'c', 'none'))
-list.append(Card(13, 'c', 'none'))
+        self.frames["startPage"].grid(row=0,col=0,sticky="nsew")
 
-deck = Deck(list)
+        self.show_frame("StartPage")
 
-#print(deck)
+    def show_frame(self, page):
+        frame = self.frames[page]
+        frame.tkraise()
 
-list = [[1, 'h', 'none'], [2, 'h', 'none'], [3, 'h', 'none'], [4, 'h', 'none'], [5, 'h', 'none'], [6, 'h', 'none'], [7, 'h', 'none'], [8, 'h', 'none'], [9, 'h', 'none'], [10, 'h', 'none'], [11, 'h', 'none'], [12, 'h', 'none'], [13, 'h', 'none'], [1, 's', 'none'], [2, 's', 'none'], [3, 's', 'none'], [4, 's', 'none'], [5, 's', 'none'], [6, 's', 'none'], [7, 's', 'none'], [8, 's', 'none'], [9, 's', 'none'], [10, 's', 'none'], [11, 's', 'none'], [12, 's', 'none'], [13, 's', 'none'], [1, 's', 'none'], [2, 's', 'none'], [3, 's', 'none'], [4, 's', 'none'], [5, 's', 'none'], [6, 's', 'none'], [7, 's', 'none'], [8, 's', 'none'], [9, 's', 'none'], [10, 's', 'none'], [11, 's', 'none'], [12, 's', 'none'], [13, 's', 'none'], [1, 'c', 'none'], [2, 'c', 'none'], [3, 'c', 'none'], [4, 'c', 'none'], [5, 'c', 'none'], [6, 'c', 'none'], [7, 'c', 'none'], [8, 'c', 'none'], [9, 'c', 'none'], [10, 'c', 'none'], [11, 'c', 'none'], [12, 'c', 'none'], [13, 'c', 'none']]
-#for i in range(52):
-    #list[i].append(i+1)
-    #print(f"list.append(Card{tuple(list[i])})")
+class StartPage(tk.Frame):
 
-hand = list.pop([0:7])
-print(hand)
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(parent, controller,)
+        self.controller = controller
+        lbl = tk.Label(self, text="Welcome To POKERGAME")
+        lbl.pack()
+
+        play_btn = tk.Button(self, text="Play", command=lambda: controller.show_frame("game"))
+        info_btn = tk.Button(self, text="Info", command=lambda: controller.show_frame("info"))
+        quit_btn = tk.Button(self, text="Quit", command=lambda: controller.destroy())
+
+        play_btn.pack()
+        info_btn.pack()
+        quit_btn.pack()
+
+root = App()
+
+root.title("poker game")
+root.geometry('350x200')
+
+
+root.mainloop()
